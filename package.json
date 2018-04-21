@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/TheBrokenRail/MCLauncher#readme",
   "dependencies": {
+    "adm-zip": "^0.4.7",
+    "escape-regexp": "0.0.1",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.6.2",
     "sync-request": "^6.0.0"
