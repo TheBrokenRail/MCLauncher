@@ -6,7 +6,7 @@ const escape = require('escape-regexp');
 const AdmZip = require('adm-zip');
 const path = require('path');
 const {
-  spawn
+  exec
 } = require('child_process');
 
 if (fs.existsSync('minecraft')) {
@@ -54,23 +54,55 @@ let args = '';
 for (let i = 0; i < versionJson.arguments.jvm.length; i++) {
   if (typeof(versionJson.arguments.jvm[i]) === 'string') {
     args = args + ' ' + versionJson.arguments.jvm[i];
+  } else if (versionJson.arguments.jvm[i].rules) {
+    let allow = false;
+    for (let x = 0; x < versionJson.arguments.jvm[i].rules.length; x++) {
+      let valid = false;
+      if (versionJson.arguments.jvm[i].rules[x].os) {
+        let os = '';
+        if (os.type() == 'Windows_NT') {
+          os = 'windows';
+        } else if (os.type() == 'Linux') {
+          os = 'linux';
+        } if (os.type() == 'Darwin') {
+          os = 'osx';
+        }
+        if (os === versionJson.arguments.jvm[i].rules[x].os.name) {
+          valid = true;
+        }
+      }
+      if (versionJson.arguments.jvm[i].rules[x].action === 'allow') {
+        allow = true;
+      } else if (versionJson.arguments.jvm[i].rules[x].action === 'disallow') {
+        allow = false;
+      }
+    }
   }
 }
-args = args + '-Xmx1G -Dminecraft.client.jar=' + path.resolve(__dirname, 'minecraft/client.jar');
+args = args + '-Xmx1G -Dminecraft.client.jar=' + path.resolve(__dirname, 'minecraft/client.jar') + ' ' + versionJson.mainClass;
 for (let i = 0; i < versionJson.arguments.game.length; i++) {
   if (typeof(versionJson.arguments.game[i]) === 'string') {
     args = args + ' ' + versionJson.arguments.game[i];
   }
 }
-args = args + ' ' + versionJson.mainClass;
 let indexRes = request('GET', versionJson.assetIndex.url);
-fs.writeFileSync('minecraft/index.json', indexRes.getBody());
-fs.mkdirSync('minecraft/game');
 fs.mkdirSync('minecraft/assets');
+fs.mkdirSync('minecraft/assets/objects');
+fs.mkdirSync('minecraft/assets/indexes');
+fs.writeFileSync('minecraft/assets/indexes/' + versionJson.assetIndex.id + '.json', indexRes.getBody());
+let index = JSON.parse(indexRes.getBody());
+for (let x in index.objects) {
+  if (!fs.existsSync('minecraft/assets/objects/' + index.objects[x].hash.slice(0, 2))) {
+    fs.mkdirSync('minecraft/assets/objects/' + index.objects[x].hash.slice(0, 2));
+  }
+  let asset = request('GET', 'http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash);
+  fs.writeFileSync('minecraft/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash, asset.getBody());
+}
+fs.mkdirSync('minecraft/game');
 let username = 'Test';
 let gameDir = __dirname + '/minecraft/game';
 let assets = __dirname + '/minecraft/assets';
-let assetsIndex = __dirname + '/minecraft/index.json';
+let assetsIndex = versionJson.assetIndex.id;
 let uuid = '0';
 let authToken = '0';
 let userType = 'mojang';
@@ -91,4 +123,8 @@ args = args.replace(new RegExp(escape('${natives_directory}'), 'g'), natives);
 args = args.replace(new RegExp(escape('${launcher_name}'), 'g'), launcherName);
 args = args.replace(new RegExp(escape('${launcher_version}'), 'g'), launcherVersion);
 args = args.replace(new RegExp(escape('${classpath}'), 'g'), classpath);
-console.log('ARGS: javaw ' + args);
+console.log('ARGS: javaw' + args);
+exec('javaw' + args, {}, function (e, stdout, stderr) {
+  console.log('STDOUT\n' + stdout);
+  console.log('STDERR\n' + stderr);
+});
