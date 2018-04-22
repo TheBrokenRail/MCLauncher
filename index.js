@@ -16,7 +16,7 @@ if (fs.existsSync('minecraft')) {
 fs.mkdirSync('minecraft');
 let versionsRes = request('GET', 'https://launchermeta.mojang.com/mc/game/version_manifest.json');
 let versionsJson = JSON.parse(versionsRes.getBody());
-let version = '1.8';
+let version = '1.6.4';
 if (version === 'latest-release') {
   version = versionsJson.latest.release;
 }
@@ -177,10 +177,12 @@ if (!fs.existsSync('data/assets/objects')) {
 if (!fs.existsSync('data/assets/indexes')) {
   fs.mkdirSync('data/assets/indexes');
 }
-if (fs.existsSync('minecraft/assets')) {
-  rimraf.sync('minecraft/assets');
+if (!fs.existsSync('data/assets/virtual')) {
+  fs.mkdirSync('data/assets/virtual');
 }
-fs.mkdirSync('minecraft/assets');
+if (!fs.existsSync('data/assets/virtual/' + versionJson.assetIndex.id)) {
+  fs.mkdirSync('data/assets/virtual/' + versionJson.assetIndex.id);
+}
 if (!fs.existsSync('data/assets/indexes/' + versionJson.assetIndex.id + '.json')) {
   fs.writeFileSync('data/assets/indexes/' + versionJson.assetIndex.id + '.json', indexRes.getBody());
 }
@@ -190,13 +192,18 @@ for (let x in index.objects) {
     fs.mkdirSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2));
   }
   console.log('Downloading Asset ' + x);
+  let asset = null;
   if (!fs.existsSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash)) {
-    let asset = request('GET', 'http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash);
+    asset = request('GET', 'http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash);
     fs.writeFileSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash, asset.getBody());
   }
-  let asset = request('GET', 'http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash);
-  mkdirp.sync('minecraft/assets/' + x.split('/').splice(0, x.split('/').length - 1).join('/'));
-  fs.writeFileSync('minecraft/assets/' + x, asset.getBody());
+  if (!fs.existsSync('data/assets/virtual/' + versionJson.assetIndex.id + '/' + x)) {
+    if (!asset) {
+      asset = request('GET', 'http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash);
+    }
+    mkdirp.sync('data/assets/virtual/' + versionJson.assetIndex.id + '/' + x.split('/').splice(0, x.split('/').length - 1).join('/'));
+    fs.writeFileSync('data/assets/virtual/' + versionJson.assetIndex.id + '/' + x, asset.getBody());
+  }
 }
 if (!fs.existsSync('data/game')) {
   fs.mkdirSync('data/game');
@@ -204,7 +211,7 @@ if (!fs.existsSync('data/game')) {
 let username = 'Test';
 let gameDir = __dirname + '/data/game';
 let assets = __dirname + '/data/assets';
-let virtualAssets = __dirname + '/minecraft/assets';
+let virtualAssets = __dirname + '/data/assets/virtual/' + versionJson.assetIndex.id + '/';
 let assetsIndex = versionJson.assetIndex.id;
 let uuid = '0';
 let authToken = '0';
