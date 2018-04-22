@@ -16,7 +16,7 @@ if (fs.existsSync('minecraft')) {
 fs.mkdirSync('minecraft');
 let versionsRes = request('GET', 'https://launchermeta.mojang.com/mc/game/version_manifest.json');
 let versionsJson = JSON.parse(versionsRes.getBody());
-let version = '1.6.4';
+let version = 'rd-132211';
 if (version === 'latest-release') {
   version = versionsJson.latest.release;
 }
@@ -121,13 +121,14 @@ if (versionJson.arguments && versionJson.arguments.jvm) {
   jvmArgs = ['-Djava.library.path=${natives_directory}',
     '-Dminecraft.launcher.brand=${launcher_name}',
     '-Dminecraft.launcher.version=${launcher_version}',
+    (os.type() === 'Windows_NT' ? '-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump' : null),
     '-cp',
     '${classpath}'];
 }
 for (let i = 0; i < jvmArgs.length; i++) {
   if (typeof(jvmArgs[i]) === 'string') {
     args = args + ' ' + jvmArgs[i];
-  } else if (jvmArgs[i].rules) {
+  } else if (jvmArgs[i] !== null && jvmArgs[i].rules) {
     let allow = checkRules(jvmArgs[i].rules);
     if (allow) {
       let newArg = jvmArgs[i].value;
@@ -153,7 +154,7 @@ if (versionJson.arguments && versionJson.arguments.game) {
 for (let i = 0; i < gameArgs.length; i++) {
   if (typeof(gameArgs[i]) === 'string') {
     args = args + ' ' + gameArgs[i];
-  } else if (gameArgs[i].rules) {
+  } else if (gameArgs[i] !== null && gameArgs[i].rules) {
     let allow = checkRules(gameArgs[i].rules);
     if (allow) {
       let newArg = gameArgs[i].value;
