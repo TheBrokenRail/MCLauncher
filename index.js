@@ -16,7 +16,7 @@ if (fs.existsSync('minecraft')) {
 fs.mkdirSync('minecraft');
 let versionsRes = request('GET', 'https://launchermeta.mojang.com/mc/game/version_manifest.json');
 let versionsJson = JSON.parse(versionsRes.getBody());
-let version = 'rd-132211';
+let version = 'latest-snapshot';
 if (version === 'latest-release') {
   version = versionsJson.latest.release;
 }
@@ -41,6 +41,8 @@ if (!fs.existsSync('data')) {
 if (!fs.existsSync('data/lib')) {
   fs.mkdirSync('data/lib');
 }
+let demo = false;
+let setDemo = false;
 function checkRules(rules) {
   let allow = false;
   let disallowed = false;
@@ -62,11 +64,28 @@ function checkRules(rules) {
         valid = false;
       }
     }
+    if (rules[x].features) {
+      for (let y in rules[x].features) {
+        if (y === 'is_demo_user') {
+          valid = demo;
+          setDemo = true;
+        } else if (y === 'has_custom_resolution') {
+          valid = false;
+        } else {
+          valid = false;
+        }
+      }
+    }
     if (rules[x].action === 'allow' && valid && !disallowed) {
       allow = true;
     } else if (rules[x].action === 'disallow' && valid) {
       allow = false;
       disallowed = true;
+    } else if (rules[x].action === 'allow' && !valid && !disallowed) {
+      allow = false;
+      disallowed = true;
+    } else if (rules[x].action === 'disallow' && !valid && !disallowed) {
+      allow = true;
     }
   }
   return allow;
@@ -144,12 +163,12 @@ for (let i = 0; i < jvmArgs.length; i++) {
     }
   }
 }
-args = args + '-Xmx1G -Dminecraft.client.jar=' + path.resolve(__dirname, 'minecraft/client.jar') + ' ' + versionJson.mainClass;
+args = args + ' -Xmx1G -Dminecraft.client.jar=' + path.resolve(__dirname, 'minecraft/client.jar') + ' ' + versionJson.mainClass;
 let gameArgs = [];
 if (versionJson.arguments && versionJson.arguments.game) {
   gameArgs = versionJson.arguments.game;
 } else {
-  gameArgs = [versionJson.minecraftArguments];
+  gameArgs = [versionJson.minecraftArguments, (demo && !setDemo ? '--demo' : null)];
 }
 for (let i = 0; i < gameArgs.length; i++) {
   if (typeof(gameArgs[i]) === 'string') {
@@ -231,6 +250,7 @@ args = args.replace(new RegExp(escape('${game_assets}'), 'g'), virtualAssets);
 args = args.replace(new RegExp(escape('${assets_index_name}'), 'g'), assetsIndex);
 args = args.replace(new RegExp(escape('${auth_uuid}'), 'g'), uuid);
 args = args.replace(new RegExp(escape('${auth_access_token}'), 'g'), authToken);
+args = args.replace(new RegExp(escape('${auth_session}'), 'g'), authToken);
 args = args.replace(new RegExp(escape('${user_type}'), 'g'), userType);
 args = args.replace(new RegExp(escape('${version_type}'), 'g'), versionType);
 args = args.replace(new RegExp(escape('${natives_directory}'), 'g'), natives);
