@@ -5,6 +5,7 @@ const mkdirp = require('mkdirp');
 const escape = require('escape-regexp');
 const AdmZip = require('adm-zip');
 const path = require('path');
+const os = require('os');
 const {
   exec
 } = require('child_process');
