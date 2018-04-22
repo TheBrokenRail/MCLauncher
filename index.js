@@ -100,9 +100,9 @@ for (let i = 0; i < versionJson.arguments.jvm.length; i++) {
           valid = true;
         }
       }
-      if (versionJson.arguments.jvm[i].rules[x].action === 'allow') {
+      if (versionJson.arguments.jvm[i].rules[x].action === 'allow' && valid) {
         allow = true;
-      } else if (versionJson.arguments.jvm[i].rules[x].action === 'disallow') {
+      } else if (versionJson.arguments.jvm[i].rules[x].action === 'disallow' && valid) {
         allow = false;
       }
     }
