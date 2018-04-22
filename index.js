@@ -107,7 +107,7 @@ for (let i = 0; i < versionJson.arguments.jvm.length; i++) {
       }
     }
     if (allow) {
-      args = args + ' ' + versionJson.arguments.jvm[i].value;
+      args = args + ' ' + versionJson.arguments.jvm[i].value.join(' ');
     }
   }
 }
