@@ -35,18 +35,46 @@ fs.writeFileSync('minecraft/client.jar', jar.getBody());
 let classpath = '';
 fs.mkdirSync('minecraft/natives');
 for (let i = 0; i < versionJson.libraries.length; i++) {
-  if (versionJson.libraries[i].downloads.artifact) {
-    let asset = request('GET', versionJson.libraries[i].downloads.artifact.url);
-    mkdirp.sync('minecraft/' + versionJson.libraries[i].downloads.artifact.path.split('/').splice(0, versionJson.libraries[i].downloads.artifact.path.split('/').length - 1).join('/'));
-    fs.writeFileSync('minecraft/' + versionJson.libraries[i].downloads.artifact.path, asset.getBody());
-    classpath = classpath + path.resolve(__dirname, 'minecraft/' + versionJson.libraries[i].downloads.artifact.path) + ';';
+  let allow = true;
+  if (versionJson.libraries[i].rules) {
+    allow = false;
+    for (let x = 0; x < versionJson.libraries[i].rules.length; x++) {
+      let valid = false;
+      if (versionJson.libraries[i].rules[x].os) {
+        let os = '';
+        if (os.type() == 'Windows_NT') {
+          os = 'windows';
+        } else if (os.type() == 'Linux') {
+          os = 'linux';
+        }
+        if (os.type() == 'Darwin') {
+          os = 'osx';
+        }
+        if (os === versionJson.libraries[i].rules[x].os.name) {
+          valid = true;
+        }
+      }
+      if (versionJson.libraries[i].rules[x].action === 'allow') {
+        allow = true;
+      } else if (versionJson.libraries[i].rules[x].action === 'disallow') {
+        allow = false;
+      }
+    }
   }
-  if (versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-windows']) {
-    let natives = request('GET', versionJson.libraries[i].downloads.classifiers['natives-windows'].url);
-    fs.writeFileSync('temp.jar', natives.getBody());
-    let zip = new AdmZip('temp.jar');
-    zip.extractAllTo('minecraft/natives', true);
-    fs.unlinkSync('temp.jar');
+  if (allow) {
+    if (versionJson.libraries[i].downloads.artifact) {
+      let asset = request('GET', versionJson.libraries[i].downloads.artifact.url);
+      mkdirp.sync('minecraft/' + versionJson.libraries[i].downloads.artifact.path.split('/').splice(0, versionJson.libraries[i].downloads.artifact.path.split('/').length - 1).join('/'));
+      fs.writeFileSync('minecraft/' + versionJson.libraries[i].downloads.artifact.path, asset.getBody());
+      classpath = classpath + path.resolve(__dirname, 'minecraft/' + versionJson.libraries[i].downloads.artifact.path) + ';';
+    }
+    if (versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-windows']) {
+      let natives = request('GET', versionJson.libraries[i].downloads.classifiers['natives-windows'].url);
+      fs.writeFileSync('temp.jar', natives.getBody());
+      let zip = new AdmZip('temp.jar');
+      zip.extractAllTo('minecraft/natives', true);
+      fs.unlinkSync('temp.jar');
+    }
   }
 }
 classpath = classpath + path.resolve(__dirname, 'minecraft/client.jar') + ';';
