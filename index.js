@@ -16,7 +16,7 @@ if (fs.existsSync('minecraft')) {
 fs.mkdirSync('minecraft');
 let versionsRes = request('GET', 'https://launchermeta.mojang.com/mc/game/version_manifest.json');
 let versionsJson = JSON.parse(versionsRes.getBody());
-let version = 'latest-snapshot';
+let version = '1.8';
 if (version === 'latest-release') {
   version = versionsJson.latest.release;
 }
@@ -45,7 +45,7 @@ function checkRules(rules) {
   let allow = false;
   let disallowed = false;
   for (let x = 0; x < rules.length; x++) {
-    let valid = false;
+    let valid = true;
     if (rules[x].os) {
       let osStr = '';
       if (os.type() == 'Windows_NT') {
@@ -144,13 +144,27 @@ for (let i = 0; i < jvmArgs.length; i++) {
 args = args + '-Xmx1G -Dminecraft.client.jar=' + path.resolve(__dirname, 'minecraft/client.jar') + ' ' + versionJson.mainClass;
 let gameArgs = [];
 if (versionJson.arguments && versionJson.arguments.game) {
-  jvmArgs = versionJson.arguments.game;
+  gameArgs = versionJson.arguments.game;
 } else {
-  jvmArgs = [versionJson.minecraftArguments];
+  gameArgs = [versionJson.minecraftArguments];
 }
 for (let i = 0; i < gameArgs.length; i++) {
   if (typeof(gameArgs[i]) === 'string') {
     args = args + ' ' + gameArgs[i];
+  } else if (gameArgs[i].rules) {
+    let allow = checkRules(gameArgs[i].rules);
+    if (allow) {
+      let newArg = gameArgs[i].value;
+      if (Array.isArray(newArg)) {
+        for (let y = 0; y < newArg.length; y++) {
+          if (newArg[y].split(' ').length > 1) {
+            newArg[y] = '"' + newArg[y] + '"';
+          }
+        }
+        newArg = newArg.join(' ');
+      }
+      args = args + ' ' + newArg;
+    }
   }
 }
 let indexRes = request('GET', versionJson.assetIndex.url);
@@ -163,6 +177,10 @@ if (!fs.existsSync('data/assets/objects')) {
 if (!fs.existsSync('data/assets/indexes')) {
   fs.mkdirSync('data/assets/indexes');
 }
+if (fs.existsSync('minecraft/assets')) {
+  rimraf.sync('minecraft/assets');
+}
+fs.mkdirSync('minecraft/assets');
 if (!fs.existsSync('data/assets/indexes/' + versionJson.assetIndex.id + '.json')) {
   fs.writeFileSync('data/assets/indexes/' + versionJson.assetIndex.id + '.json', indexRes.getBody());
 }
@@ -176,6 +194,9 @@ for (let x in index.objects) {
     let asset = request('GET', 'http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash);
     fs.writeFileSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash, asset.getBody());
   }
+  let asset = request('GET', 'http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash);
+  mkdirp.sync('minecraft/assets/' + x.split('/').splice(0, x.split('/').length - 1).join('/'));
+  fs.writeFileSync('minecraft/assets/' + x, asset.getBody());
 }
 if (!fs.existsSync('data/game')) {
   fs.mkdirSync('data/game');
@@ -183,6 +204,7 @@ if (!fs.existsSync('data/game')) {
 let username = 'Test';
 let gameDir = __dirname + '/data/game';
 let assets = __dirname + '/data/assets';
+let virtualAssets = __dirname + '/minecraft/assets';
 let assetsIndex = versionJson.assetIndex.id;
 let uuid = '0';
 let authToken = '0';
@@ -195,6 +217,7 @@ args = args.replace(new RegExp(escape('${auth_player_name}'), 'g'), username);
 args = args.replace(new RegExp(escape('${version_name}'), 'g'), version);
 args = args.replace(new RegExp(escape('${game_directory}'), 'g'), gameDir);
 args = args.replace(new RegExp(escape('${assets_root}'), 'g'), assets);
+args = args.replace(new RegExp(escape('${game_assets}'), 'g'), virtualAssets);
 args = args.replace(new RegExp(escape('${assets_index_name}'), 'g'), assetsIndex);
 args = args.replace(new RegExp(escape('${auth_uuid}'), 'g'), uuid);
 args = args.replace(new RegExp(escape('${auth_access_token}'), 'g'), authToken);
