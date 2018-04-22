@@ -42,16 +42,16 @@ for (let i = 0; i < versionJson.libraries.length; i++) {
     for (let x = 0; x < versionJson.libraries[i].rules.length; x++) {
       let valid = false;
       if (versionJson.libraries[i].rules[x].os) {
-        let os = '';
+        let osStr = '';
         if (os.type() == 'Windows_NT') {
-          os = 'windows';
+          osStr = 'windows';
         } else if (os.type() == 'Linux') {
-          os = 'linux';
+          osStr = 'linux';
         }
         if (os.type() == 'Darwin') {
-          os = 'osx';
+          osStr = 'osx';
         }
-        if (os === versionJson.libraries[i].rules[x].os.name) {
+        if (osStr === versionJson.libraries[i].rules[x].os.name) {
           valid = true;
         }
       }
@@ -88,15 +88,15 @@ for (let i = 0; i < versionJson.arguments.jvm.length; i++) {
     for (let x = 0; x < versionJson.arguments.jvm[i].rules.length; x++) {
       let valid = false;
       if (versionJson.arguments.jvm[i].rules[x].os) {
-        let os = '';
+        let osStr = '';
         if (os.type() == 'Windows_NT') {
-          os = 'windows';
+          osStr = 'windows';
         } else if (os.type() == 'Linux') {
-          os = 'linux';
+          osStr = 'linux';
         } if (os.type() == 'Darwin') {
-          os = 'osx';
+          osStr = 'osx';
         }
-        if (os === versionJson.arguments.jvm[i].rules[x].os.name) {
+        if (osStr === versionJson.arguments.jvm[i].rules[x].os.name) {
           valid = true;
         }
       }
