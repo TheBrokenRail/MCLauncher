@@ -35,6 +35,12 @@ let jar = request('GET', versionJson.downloads.client.url);
 fs.writeFileSync('minecraft/client.jar', jar.getBody());
 let classpath = '';
 fs.mkdirSync('minecraft/natives');
+if (!fs.existsSync('data')) {
+  fs.mkdirSync('data');
+}
+if (!fs.existsSync('data/lib')) {
+  fs.mkdirSync('data/lib');
+}
 for (let i = 0; i < versionJson.libraries.length; i++) {
   let allow = true;
   if (versionJson.libraries[i].rules) {
@@ -55,9 +61,9 @@ for (let i = 0; i < versionJson.libraries.length; i++) {
           valid = true;
         }
       }
-      if (versionJson.libraries[i].rules[x].action === 'allow') {
+      if (versionJson.libraries[i].rules[x].action === 'allow' && valid) {
         allow = true;
-      } else if (versionJson.libraries[i].rules[x].action === 'disallow') {
+      } else if (versionJson.libraries[i].rules[x].action === 'disallow' && valid) {
         allow = false;
       }
     }
@@ -65,13 +71,29 @@ for (let i = 0; i < versionJson.libraries.length; i++) {
   if (allow) {
     console.log('Downloading Library ' + versionJson.libraries[i].name);
     if (versionJson.libraries[i].downloads.artifact) {
-      let asset = request('GET', versionJson.libraries[i].downloads.artifact.url);
-      mkdirp.sync('minecraft/' + versionJson.libraries[i].downloads.artifact.path.split('/').splice(0, versionJson.libraries[i].downloads.artifact.path.split('/').length - 1).join('/'));
-      fs.writeFileSync('minecraft/' + versionJson.libraries[i].downloads.artifact.path, asset.getBody());
-      classpath = classpath + path.resolve(__dirname, 'minecraft/' + versionJson.libraries[i].downloads.artifact.path) + ';';
+      if (!fs.existsSync('data/lib/' + versionJson.libraries[i].downloads.artifact.path)) {
+        let asset = request('GET', versionJson.libraries[i].downloads.artifact.url);
+        mkdirp.sync('data/lib/' + versionJson.libraries[i].downloads.artifact.path.split('/').splice(0, versionJson.libraries[i].downloads.artifact.path.split('/').length - 1).join('/'));
+        fs.writeFileSync('data/lib/' + versionJson.libraries[i].downloads.artifact.path, asset.getBody());
+      }
+      classpath = classpath + path.resolve(__dirname, 'data/lib/' + versionJson.libraries[i].downloads.artifact.path) + ';';
     }
     if (versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-windows']) {
       let natives = request('GET', versionJson.libraries[i].downloads.classifiers['natives-windows'].url);
+      fs.writeFileSync('temp.jar', natives.getBody());
+      let zip = new AdmZip('temp.jar');
+      zip.extractAllTo('minecraft/natives', true);
+      fs.unlinkSync('temp.jar');
+    }
+    if (versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-linux']) {
+      let natives = request('GET', versionJson.libraries[i].downloads.classifiers['natives-linux'].url);
+      fs.writeFileSync('temp.jar', natives.getBody());
+      let zip = new AdmZip('temp.jar');
+      zip.extractAllTo('minecraft/natives', true);
+      fs.unlinkSync('temp.jar');
+    }
+    if (versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-osx']) {
+      let natives = request('GET', versionJson.libraries[i].downloads.classifiers['natives-osx'].url);
       fs.writeFileSync('temp.jar', natives.getBody());
       let zip = new AdmZip('temp.jar');
       zip.extractAllTo('minecraft/natives', true);
@@ -128,23 +150,35 @@ for (let i = 0; i < versionJson.arguments.game.length; i++) {
   }
 }
 let indexRes = request('GET', versionJson.assetIndex.url);
-fs.mkdirSync('minecraft/assets');
-fs.mkdirSync('minecraft/assets/objects');
-fs.mkdirSync('minecraft/assets/indexes');
-fs.writeFileSync('minecraft/assets/indexes/' + versionJson.assetIndex.id + '.json', indexRes.getBody());
+if (!fs.existsSync('data/assets')) {
+  fs.mkdirSync('data/assets');
+}
+if (!fs.existsSync('data/assets/objects')) {
+  fs.mkdirSync('data/assets/objects');
+}
+if (!fs.existsSync('data/assets/indexes')) {
+  fs.mkdirSync('data/assets/indexes');
+}
+if (!fs.existsSync('data/assets/indexes/' + versionJson.assetIndex.id + '.json')) {
+  fs.writeFileSync('data/assets/indexes/' + versionJson.assetIndex.id + '.json', indexRes.getBody());
+}
 let index = JSON.parse(indexRes.getBody());
 for (let x in index.objects) {
-  if (!fs.existsSync('minecraft/assets/objects/' + index.objects[x].hash.slice(0, 2))) {
-    fs.mkdirSync('minecraft/assets/objects/' + index.objects[x].hash.slice(0, 2));
+  if (!fs.existsSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2))) {
+    fs.mkdirSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2));
   }
   console.log('Downloading Asset ' + x);
-  let asset = request('GET', 'http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash);
-  fs.writeFileSync('minecraft/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash, asset.getBody());
+  if (!fs.existsSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash)) {
+    let asset = request('GET', 'http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash);
+    fs.writeFileSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash, asset.getBody());
+  }
 }
-fs.mkdirSync('minecraft/game');
+if (!fs.existsSync('data/game')) {
+  fs.mkdirSync('data/game');
+}
 let username = 'Test';
-let gameDir = __dirname + '/minecraft/game';
-let assets = __dirname + '/minecraft/assets';
+let gameDir = __dirname + '/data/game';
+let assets = __dirname + '/data/assets';
 let assetsIndex = versionJson.assetIndex.id;
 let uuid = '0';
 let authToken = '0';
