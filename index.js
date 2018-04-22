@@ -106,6 +106,9 @@ for (let i = 0; i < versionJson.arguments.jvm.length; i++) {
         allow = false;
       }
     }
+    if (allow) {
+      args = args + ' ' + versionJson.arguments.jvm[i].value;
+    }
   }
 }
 args = args + '-Xmx1G -Dminecraft.client.jar=' + path.resolve(__dirname, 'minecraft/client.jar') + ' ' + versionJson.mainClass;
