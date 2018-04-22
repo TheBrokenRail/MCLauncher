@@ -41,32 +41,38 @@ if (!fs.existsSync('data')) {
 if (!fs.existsSync('data/lib')) {
   fs.mkdirSync('data/lib');
 }
+function checkRules(rules) {
+  let allow = false;
+  let disallowed = false;
+  for (let x = 0; x < rules.length; x++) {
+    let valid = false;
+    if (rules[x].os) {
+      let osStr = '';
+      if (os.type() == 'Windows_NT') {
+        osStr = 'windows';
+      } else if (os.type() == 'Linux') {
+        osStr = 'linux';
+      }
+      if (os.type() == 'Darwin') {
+        osStr = 'osx';
+      }
+      if (osStr === rules[x].os.name) {
+        valid = true;
+      }
+    }
+    if (rules[x].action === 'allow' && valid && !disallowed) {
+      allow = true;
+    } else if (rules[x].action === 'disallow' && valid) {
+      allow = false;
+      disallowed = true;
+    }
+  }
+  return allow;
+}
 for (let i = 0; i < versionJson.libraries.length; i++) {
   let allow = true;
   if (versionJson.libraries[i].rules) {
-    allow = false;
-    for (let x = 0; x < versionJson.libraries[i].rules.length; x++) {
-      let valid = false;
-      if (versionJson.libraries[i].rules[x].os) {
-        let osStr = '';
-        if (os.type() == 'Windows_NT') {
-          osStr = 'windows';
-        } else if (os.type() == 'Linux') {
-          osStr = 'linux';
-        }
-        if (os.type() == 'Darwin') {
-          osStr = 'osx';
-        }
-        if (osStr === versionJson.libraries[i].rules[x].os.name) {
-          valid = true;
-        }
-      }
-      if (versionJson.libraries[i].rules[x].action === 'allow' && valid) {
-        allow = true;
-      } else if (versionJson.libraries[i].rules[x].action === 'disallow' && valid) {
-        allow = false;
-      }
-    }
+    allow = checkRules(versionJson.libraries[i].rules);
   }
   if (allow) {
     console.log('Downloading Library ' + versionJson.libraries[i].name);
@@ -106,34 +112,23 @@ if (fs.existsSync('minecraft/natives/META-INF')) {
 }
 classpath = classpath + path.resolve(__dirname, 'minecraft/client.jar') + ';';
 let args = '';
-for (let i = 0; i < versionJson.arguments.jvm.length; i++) {
-  if (typeof(versionJson.arguments.jvm[i]) === 'string') {
-    args = args + ' ' + versionJson.arguments.jvm[i];
-  } else if (versionJson.arguments.jvm[i].rules) {
-    let allow = false;
-    for (let x = 0; x < versionJson.arguments.jvm[i].rules.length; x++) {
-      let valid = false;
-      if (versionJson.arguments.jvm[i].rules[x].os) {
-        let osStr = '';
-        if (os.type() == 'Windows_NT') {
-          osStr = 'windows';
-        } else if (os.type() == 'Linux') {
-          osStr = 'linux';
-        } if (os.type() == 'Darwin') {
-          osStr = 'osx';
-        }
-        if (osStr === versionJson.arguments.jvm[i].rules[x].os.name) {
-          valid = true;
-        }
-      }
-      if (versionJson.arguments.jvm[i].rules[x].action === 'allow' && valid) {
-        allow = true;
-      } else if (versionJson.arguments.jvm[i].rules[x].action === 'disallow' && valid) {
-        allow = false;
-      }
-    }
+let jvmArgs = [];
+if (versionJson.arguments && versionJson.arguments.jvm) {
+  jvmArgs = versionJson.arguments.jvm;
+} else {
+  jvmArgs = ['-Djava.library.path=${natives_directory}',
+    '-Dminecraft.launcher.brand=${launcher_name}',
+    '-Dminecraft.launcher.version=${launcher_version}',
+    '-cp',
+    '${classpath}'];
+}
+for (let i = 0; i < jvmArgs.length; i++) {
+  if (typeof(jvmArgs[i]) === 'string') {
+    args = args + ' ' + jvmArgs[i];
+  } else if (jvmArgs[i].rules) {
+    let allow = checkRules(jvmArgs[i].rules);
     if (allow) {
-      let newArg = versionJson.arguments.jvm[i].value;
+      let newArg = jvmArgs[i].value;
       if (Array.isArray(newArg)) {
         for (let y = 0; y < newArg.length; y++) {
           if (newArg[y].split(' ').length > 1) {
@@ -147,9 +142,15 @@ for (let i = 0; i < versionJson.arguments.jvm.length; i++) {
   }
 }
 args = args + '-Xmx1G -Dminecraft.client.jar=' + path.resolve(__dirname, 'minecraft/client.jar') + ' ' + versionJson.mainClass;
-for (let i = 0; i < versionJson.arguments.game.length; i++) {
-  if (typeof(versionJson.arguments.game[i]) === 'string') {
-    args = args + ' ' + versionJson.arguments.game[i];
+let gameArgs = [];
+if (versionJson.arguments && versionJson.arguments.game) {
+  jvmArgs = versionJson.arguments.game;
+} else {
+  jvmArgs = [versionJson.minecraftArguments];
+}
+for (let i = 0; i < gameArgs.length; i++) {
+  if (typeof(gameArgs[i]) === 'string') {
+    args = args + ' ' + gameArgs[i];
   }
 }
 let indexRes = request('GET', versionJson.assetIndex.url);
@@ -186,7 +187,7 @@ let assetsIndex = versionJson.assetIndex.id;
 let uuid = '0';
 let authToken = '0';
 let userType = 'mojang';
-let versionType = 'snapshot';
+let versionType = versionJson.type;
 let natives = __dirname + '/minecraft/natives';
 let launcherName = 'MCLauncher';
 let launcherVersion = '10';
