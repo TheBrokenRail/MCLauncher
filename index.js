@@ -58,6 +58,8 @@ function checkRules(rules) {
       }
       if (osStr === rules[x].os.name) {
         valid = true;
+      } else {
+        valid = false;
       }
     }
     if (rules[x].action === 'allow' && valid && !disallowed) {
