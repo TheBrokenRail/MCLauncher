@@ -101,6 +101,9 @@ for (let i = 0; i < versionJson.libraries.length; i++) {
     }
   }
 }
+if (fs.existsSync('minecraft/natives/META-INF')) {
+  rimraf.sync('minecraft/natives/META-INF');
+}
 classpath = classpath + path.resolve(__dirname, 'minecraft/client.jar') + ';';
 let args = '';
 for (let i = 0; i < versionJson.arguments.jvm.length; i++) {
