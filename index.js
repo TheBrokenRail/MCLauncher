@@ -107,7 +107,11 @@ for (let i = 0; i < versionJson.arguments.jvm.length; i++) {
       }
     }
     if (allow) {
-      args = args + ' ' + versionJson.arguments.jvm[i].value.join(' ');
+      let newArg = versionJson.arguments.jvm[i].value;
+      if (Array.isArray(newArg)) {
+        newArg = newArg.join(' ');
+      }
+      args = args + ' ' + newArg;
     }
   }
 }
