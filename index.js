@@ -63,6 +63,7 @@ for (let i = 0; i < versionJson.libraries.length; i++) {
     }
   }
   if (allow) {
+    console.log('Downloading Library ' + versionJson.libraries[i].name);
     if (versionJson.libraries[i].downloads.artifact) {
       let asset = request('GET', versionJson.libraries[i].downloads.artifact.url);
       mkdirp.sync('minecraft/' + versionJson.libraries[i].downloads.artifact.path.split('/').splice(0, versionJson.libraries[i].downloads.artifact.path.split('/').length - 1).join('/'));
@@ -109,6 +110,11 @@ for (let i = 0; i < versionJson.arguments.jvm.length; i++) {
     if (allow) {
       let newArg = versionJson.arguments.jvm[i].value;
       if (Array.isArray(newArg)) {
+        for (let y = 0; y < newArg.length; y++) {
+          if (newArg[y].split(' ').length > 1) {
+            newArg[y] = '"' + newArg[y] + '"';
+          }
+        }
         newArg = newArg.join(' ');
       }
       args = args + ' ' + newArg;
@@ -131,6 +137,7 @@ for (let x in index.objects) {
   if (!fs.existsSync('minecraft/assets/objects/' + index.objects[x].hash.slice(0, 2))) {
     fs.mkdirSync('minecraft/assets/objects/' + index.objects[x].hash.slice(0, 2));
   }
+  console.log('Downloading Asset ' + x);
   let asset = request('GET', 'http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash);
   fs.writeFileSync('minecraft/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash, asset.getBody());
 }
