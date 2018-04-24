@@ -232,7 +232,7 @@ module.exports = function (options) {
     fs.mkdirSync('data/profiles/' + options.profile);
   }
   let username = options.username;
-  let gameDir = __dirname + '/data/profiles/' + options.prfile;
+  let gameDir = __dirname + '/data/profiles/' + options.profile;
   let assets = __dirname + '/data/assets';
   let virtualAssets = __dirname + '/data/assets/virtual';
   let assetsIndex = versionJson.assetIndex.id;
