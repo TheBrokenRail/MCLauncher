@@ -10,14 +10,14 @@ const {
   exec
 } = require('child_process');
 
-module.exports = function (flags) {
+module.exports = function (options) {
   if (fs.existsSync('minecraft')) {
     rimraf.sync('minecraft');
   }
   fs.mkdirSync('minecraft');
   let versionsRes = request('GET', 'https://launchermeta.mojang.com/mc/game/version_manifest.json');
   let versionsJson = JSON.parse(versionsRes.getBody());
-  let version = flags.version;
+  let version = options.version;
   if (version === 'latest-release') {
     version = versionsJson.latest.release;
   }
@@ -67,7 +67,7 @@ module.exports = function (flags) {
       if (rules[x].features) {
         for (let y in rules[x].features) {
           if (y === 'is_demo_user') {
-            valid = flags.demo;
+            valid = options.demo;
             setDemo = true;
           } else if (y === 'has_custom_resolution') {
             valid = false;
@@ -168,7 +168,7 @@ module.exports = function (flags) {
   if (versionJson.arguments && versionJson.arguments.game) {
     gameArgs = versionJson.arguments.game;
   } else {
-    gameArgs = [versionJson.minecraftArguments, (flags.demo && !setDemo ? '--demo' : null)];
+    gameArgs = [versionJson.minecraftArguments, (options.demo && !setDemo ? '--demo' : null)];
   }
   for (let i = 0; i < gameArgs.length; i++) {
     if (typeof(gameArgs[i]) === 'string') {
@@ -215,28 +215,29 @@ module.exports = function (flags) {
     }
     console.log('Downloading Asset ' + x);
     let asset = null;
-    if (!fs.existsSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash)) {
+    if (versionJson.assetIndex.id !== 'legacy' && !fs.existsSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash)) {
       asset = request('GET', 'http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash);
       fs.writeFileSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash, asset.getBody());
     }
-    if (!fs.existsSync('data/assets/virtual/' + versionJson.assetIndex.id + '/' + x)) {
-      if (!asset) {
-        asset = request('GET', 'http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash);
-      }
-      mkdirp.sync('data/assets/virtual/' + versionJson.assetIndex.id + '/' + x.split('/').splice(0, x.split('/').length - 1).join('/'));
-      fs.writeFileSync('data/assets/virtual/' + versionJson.assetIndex.id + '/' + x, asset.getBody());
+    if (versionJson.assetIndex.id === 'legacy' && !fs.existsSync('data/assets/virtual/' + versionJson.assetIndex.id + '/' + x)) {
+      let asset = request('GET', 'http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash);
+      mkdirp.sync('data/assets/virtual/' + x.split('/').splice(0, x.split('/').length - 1).join('/'));
+      fs.writeFileSync('data/assets/virtual/' + x, asset.getBody());
     }
   }
-  if (!fs.existsSync('data/game')) {
-    fs.mkdirSync('data/game');
+  if (!fs.existsSync('data/profiles')) {
+    fs.mkdirSync('data/profiles');
   }
-  let username = 'Test';
-  let gameDir = __dirname + '/data/game';
+  if (!fs.existsSync('data/profiles/' + options.profile)) {
+    fs.mkdirSync('data/profiles/' + options.profile);
+  }
+  let username = options.username;
+  let gameDir = __dirname + '/data/profiles/' + options.prfile;
   let assets = __dirname + '/data/assets';
-  let virtualAssets = __dirname + '/data/assets/virtual/' + versionJson.assetIndex.id + '/';
+  let virtualAssets = __dirname + '/data/assets/virtual';
   let assetsIndex = versionJson.assetIndex.id;
-  let uuid = '0';
-  let authToken = '0';
+  let uuid = options.uuid;
+  let authToken = options.authToken;
   let userType = 'mojang';
   let versionType = versionJson.type;
   let natives = __dirname + '/minecraft/natives';
