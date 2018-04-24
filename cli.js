@@ -1,4 +1,4 @@
-const mclauncher = require('./index');
+const mclauncher = require('./launcher');
 const args = require('args');
 const request = require('sync-request');
 
@@ -19,11 +19,12 @@ let res = request('POST', 'https://authserver.mojang.com/authenticate', {
   }
 });
 let data = JSON.parse(res.getBody('utf8'));
-mclauncher({
+let minecraft = mclauncher({
   version: flags['version'],
   username: data.selectedProfile.name,
   uuid: data.selectedProfile.id,
   authToken: data.accessToken,
   profile: flags['profile'],
-  demo: flags['demo']
+  demo: flags['demo'],
+  log: data => process.stdout.write(data)
 });
