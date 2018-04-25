@@ -126,6 +126,13 @@ module.exports = function (options) {
         zip.extractAllTo('minecraft/natives', true);
         fs.unlinkSync('temp.jar');
       }
+      if (versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-macos']) {
+        let natives = request('GET', versionJson.libraries[i].downloads.classifiers['natives-macos'].url);
+        fs.writeFileSync('temp.jar', natives.getBody());
+        let zip = new AdmZip('temp.jar');
+        zip.extractAllTo('minecraft/natives', true);
+        fs.unlinkSync('temp.jar');
+      }
     }
   }
   if (fs.existsSync('minecraft/natives/META-INF')) {
