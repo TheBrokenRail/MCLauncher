@@ -1,6 +1,14 @@
-﻿<div id="toolbar"></div>
+﻿<div id="toolbar">
+  <div class="button">
+    <span class="buttonText">New Profile</span>
+  </div>
+</div>
 <div id="profiles"></div>
-<div id="action"></div>
+<div id="action">
+  <div class="button">
+    <span class="buttonText">Play</span>
+  </div>
+</div>
 <style>
 #toolbar {
   position: absolute;
@@ -9,6 +17,25 @@
   width: 100%;
   height: 10%;
   background-color: grey;
+}
+.button {
+  position: absolute;
+  display: table;
+  top: 25%;
+  left: 25%;
+  width: 50%;
+  height: 50%;
+  background-color: limegreen;
+  font-family: sans-serif;
+  text-align: center;
+  color: white;
+}
+.button:hover {
+  background-color: lime;
+}
+.buttonText {
+  display: table-cell;
+  vertical-align: middle;
 }
 #profiles {
   position: absolute;
@@ -28,3 +55,14 @@
   background-color: grey;
 }
 </style>
+<script>
+const { BrowserWindow } = require('electron').remote;
+
+let win = new BrowserWindow({width: 300, height: 400});
+
+win.loadURL(url.format({
+  pathname: path.join(__dirname, 'login.html'),
+  protocol: 'file:',
+  slashes: true
+}));
+</script>
