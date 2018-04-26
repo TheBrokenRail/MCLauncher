@@ -22,7 +22,9 @@
     "electron": "^1.8.4",
     "escape-regexp": "0.0.1",
     "mkdirp": "^0.5.1",
+    "request": "^2.85.0",
     "rimraf": "^2.6.2",
-    "sync-request": "^6.0.0"
+    "sync-request": "^6.0.0",
+    "uid": "0.0.2"
   }
 }

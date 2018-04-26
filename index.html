@@ -57,8 +57,10 @@
 </style>
 <script>
 const { BrowserWindow } = require('electron').remote;
+const path = require('path');
+const url = require('url');
 
-let win = new BrowserWindow({width: 300, height: 400});
+let win = new BrowserWindow({width: 400, height: 310});
 
 win.loadURL(url.format({
   pathname: path.join(__dirname, 'login.html'),

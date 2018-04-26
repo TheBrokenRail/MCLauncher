@@ -1,0 +1,103 @@
+﻿<div id="container">
+  <div id="innerContainer">
+    <p id="error">Please Login</p>
+    <input class="loginInput" id="email" type="email"></input>
+    <input class="loginInput" id="password" type="password"></input>
+    <div id="loginButton">
+      <div class="button">Login</div>
+    </div>
+  </div>
+</div>
+<style>
+#container {
+  display: table;
+  height: 100%;
+  width: 100%;
+}
+.loginInput {
+  display: block;
+  width: 100%;
+  margin: 2%;
+  height: 22%;
+  margin-left: 0;
+  margin-right: 0;
+  font-family: sans-serif;
+  font-size: 150%;
+}
+#error {
+  width: 100%;
+  margin: 2%;
+  height: 22%;
+  margin-left: 0;
+  margin-right: 0;
+  color: red;
+  font-family: sans-serif;
+  overflow: auto;
+}
+#innerContainer {
+  display: table-cell;
+  height: 100%;
+  width: 100%;
+}
+#loginButton {
+  display: table;
+  height: 22%;
+  width: 100%;
+  margin: 2%;
+  margin-left: 0;
+  margin-right: 0;
+}
+.button {
+  display: table-cell;
+  width: 100%;
+  height: 100%;
+  background-color: limegreen;
+  font-family: sans-serif;
+  text-align: center;
+  color: white;
+  vertical-align: middle;
+}
+.button:hover {
+  background-color: lime;
+}
+</style>
+<script>
+const fs = require('fs');
+const request = require('request');
+const uid = require('uid');
+const remote = require('electron').remote
+
+if (!fs.existsSync('data')) {
+  fs.mkdirSync('data');
+}
+
+document.getElementById('loginButton').onclick = () => {
+  let token = uid();
+  request.post('https://authserver.mojang.com/authenticate', {
+    json: {
+      agent: {
+        name: 'Minecraft',
+        version: 1
+      },
+      username: document.getElementById('email').value,
+      password: document.getElementById('password').value,
+      clientToken: token
+    }
+  }, (error, response, body) => {
+    console.log(body);
+    if (response.statusCode !== 200) {
+      let error = document.getElementById('error');
+      error.innerHTML = '';
+      if (body && body.errorMessage) {
+        error.appendChild(document.createTextNode(body.errorMessage));
+      } else {
+        error.appendChild(document.createTextNode('Error: ' + response.statusCode));
+      }
+    } else {
+      let authData = {authToken: body.authToken, clientToken: token};
+      fs.writeFileSync('data/auth.json', JSON.stringify(authData));
+      remote.getCurrentWindow().close();
+    }
+  });
+};
+</script>
