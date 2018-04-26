@@ -18,6 +18,14 @@ module.exports = function (options) {
   let versionsRes = request('GET', 'https://launchermeta.mojang.com/mc/game/version_manifest.json');
   let versionsJson = JSON.parse(versionsRes.getBody());
   let version = options.version;
+  let versionJson = null;
+  if (version.startsWith('custom?')) {
+    if (fs.existsSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '.json')) {
+      versionJson = JSON.parse(fs.readFileSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '.json', 'utf8'));
+    } else {
+      version = 'latest-release';
+    }
+  }
   if (version === 'latest-release') {
     version = versionsJson.latest.release;
   }
@@ -30,8 +38,10 @@ module.exports = function (options) {
       url = versionsJson.versions[i].url;
     }
   }
-  let jarRes = request('GET', url);
-  let versionJson = JSON.parse(jarRes.getBody());
+  if (!versionJson) {
+    let jarRes = request('GET', url);
+    versionJson = JSON.parse(jarRes.getBody());
+  }
   let jar = request('GET', versionJson.downloads.client.url);
   fs.writeFileSync('minecraft/client.jar', jar.getBody());
   let classpath = '';

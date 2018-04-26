@@ -1,8 +1,8 @@
 ﻿<div id="container">
   <div id="innerContainer">
     <p id="error">Please Login</p>
-    <input class="loginInput" id="email" type="email"></input>
-    <input class="loginInput" id="password" type="password"></input>
+    <input class="loginInput" id="email" type="email" placeholder="Email"></input>
+    <input class="loginInput" id="password" type="password" placeholder="Password"></input>
     <div id="loginButton">
       <div class="button">Login</div>
     </div>
@@ -10,9 +10,12 @@
 </div>
 <style>
 #container {
+  position: absolute;
+  top: 15%;
+  left: 15%;
   display: table;
-  height: 100%;
-  width: 100%;
+  height: 70%;
+  width: 70%;
 }
 .loginInput {
   display: block;
@@ -56,9 +59,13 @@
   text-align: center;
   color: white;
   vertical-align: middle;
+  user-select: none;
 }
 .button:hover {
   background-color: lime;
+}
+.disabled-button {
+  background-color: lightgrey !important;
 }
 </style>
 <script>
@@ -72,32 +79,37 @@ if (!fs.existsSync('data')) {
 }
 
 document.getElementById('loginButton').onclick = () => {
-  let token = uid();
-  request.post('https://authserver.mojang.com/authenticate', {
-    json: {
-      agent: {
-        name: 'Minecraft',
-        version: 1
-      },
-      username: document.getElementById('email').value,
-      password: document.getElementById('password').value,
-      clientToken: token
-    }
-  }, (error, response, body) => {
-    console.log(body);
-    if (response.statusCode !== 200) {
-      let error = document.getElementById('error');
-      error.innerHTML = '';
-      if (body && body.errorMessage) {
-        error.appendChild(document.createTextNode(body.errorMessage));
-      } else {
-        error.appendChild(document.createTextNode('Error: ' + response.statusCode));
+  if (!document.getElementById('loginButton').disabled) {
+    let token = uid();
+    document.getElementsByClassName('button')[0].classList.add('disabled-button');
+    document.getElementById('loginButton').disabled = true;
+    request.post('https://authserver.mojang.com/authenticate', {
+      json: {
+        agent: {
+          name: 'Minecraft',
+          version: 1
+        },
+        username: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        clientToken: token
       }
-    } else {
-      let authData = {authToken: body.authToken, clientToken: token};
-      fs.writeFileSync('data/auth.json', JSON.stringify(authData));
-      remote.getCurrentWindow().close();
-    }
-  });
+    }, (error, response, body) => {
+      document.getElementsByClassName('button')[0].classList.remove('disabled-button');
+      document.getElementById('loginButton').disabled = false;
+      if (response.statusCode !== 200) {
+        let error = document.getElementById('error');
+        error.innerHTML = '';
+        if (body && body.errorMessage) {
+          error.appendChild(document.createTextNode(body.errorMessage));
+        } else {
+          error.appendChild(document.createTextNode('Error: ' + response.statusCode));
+        }
+      } else {
+        let authData = {accessToken: body.accessToken, clientToken: token};
+        fs.writeFileSync('data/auth.json', JSON.stringify(authData));
+        remote.getCurrentWindow().close();
+      }
+    });
+  }
 };
 </script>

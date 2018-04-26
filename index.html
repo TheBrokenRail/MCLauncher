@@ -1,11 +1,11 @@
 ﻿<div id="toolbar">
-  <div class="button">
+  <div class="button" id="newProfile">
     <span class="buttonText">New Profile</span>
   </div>
 </div>
 <div id="profiles"></div>
 <div id="action">
-  <div class="button">
+  <div class="button disabled-button" id="play">
     <span class="buttonText">Play</span>
   </div>
 </div>
@@ -36,6 +36,7 @@
 .buttonText {
   display: table-cell;
   vertical-align: middle;
+  user-select: none;
 }
 #profiles {
   position: absolute;
@@ -54,17 +55,54 @@
   height: 10%;
   background-color: grey;
 }
+.disabled-button {
+  background-color: darkgrey !important;
+}
 </style>
 <script>
-const { BrowserWindow } = require('electron').remote;
+const remote = require('electron').remote;
 const path = require('path');
 const url = require('url');
+const request = require('request');
+const fs = require('fs');
 
-let win = new BrowserWindow({width: 400, height: 310});
+function login() {
+  let win = new remote.BrowserWindow({width: 400, height: 310, parent: remote.getCurrentWindow(), resizable: false});
 
-win.loadURL(url.format({
-  pathname: path.join(__dirname, 'login.html'),
-  protocol: 'file:',
-  slashes: true
-}));
+  win.loadURL(url.format({
+    pathname: path.join(__dirname, 'login.html'),
+    protocol: 'file:',
+    slashes: true
+  }));
+}
+function getAuthData() {
+  if (fs.existsSync('data/auth.json')) {
+    let auth = JSON.parse(fs.readFileSync('./data/auth.json', 'utf8'));
+    request.post('https://authserver.mojang.com/refresh', {
+      json: {
+        accessToken: auth.accessToken,
+        clientToken: auth.clientToken
+      }
+    }, (error, response, body) => {
+      if (response.statusCode === 200) {
+        fs.writeFileSync('data/auth.json', JSON.stringify({accessToken: body.accessToken, clientToken: body.clientToken}));
+        return body;
+      } else {
+        login();
+      }
+    });
+  } else {
+    login();
+  }
+}
+getAuthData();
+document.getElementById('newProfile').onclick = () => {
+  let win = new remote.BrowserWindow({width: 400, height: 310, parent: remote.getCurrentWindow(), resizable: false});
+
+  win.loadURL(url.format({
+    pathname: path.join(__dirname, 'edit.html'),
+    protocol: 'file:',
+    slashes: true
+  }));
+};
 </script>
