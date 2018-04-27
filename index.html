@@ -58,6 +58,20 @@
 .disabled-button {
   background-color: darkgrey !important;
 }
+.item {
+  margin: 0;
+  font-family: sans-serif;
+  font-size: 150%;
+  padding: 2%;
+  background-color: silver;
+  color: white;
+}
+.item:hover {
+  background-color: darkgrey;
+}
+#selectedItem {
+  background-color: limegreen;
+}
 </style>
 <script>
 const remote = require('electron').remote;
@@ -65,6 +79,7 @@ const path = require('path');
 const url = require('url');
 const request = require('request');
 const fs = require('fs');
+const launcher = require('./launcher');
 
 function login() {
   let win = new remote.BrowserWindow({width: 400, height: 310, parent: remote.getCurrentWindow(), resizable: false});
@@ -104,5 +119,29 @@ document.getElementById('newProfile').onclick = () => {
     protocol: 'file:',
     slashes: true
   }));
+  win.on('close', loadProfiles);
 };
+function loadProfiles() {
+  let profiles = [];
+  if (fs.existsSync('data/profiles.json')) {
+    profiles = JSON.parse(fs.readFileSync('data/profiles.json', 'utf8'));
+  }
+  let profilesElement = document.getElementById('profiles');
+  profilesElement.innerHTML = '';
+  for (let i = 0; i < profiles.length; i++) {
+    let item = document.createElement('P');
+    item.classList.add('item');
+    item.appendChild(document.createTextNode(profiles[i].name));
+    item.onclick = () => {
+      if (document.getElementById('selectedItem')) {
+        document.getElementById('selectedItem').id = '';
+      }
+      item.id = 'selectedItem';
+      document.getElementById('play').classList.remove('disabled-button');
+    };
+    item.setAttribute('data-id', i);
+    profilesElement.appendChild(item);
+  }
+}
+loadProfiles();
 </script>

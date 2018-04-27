@@ -3,7 +3,7 @@
     <p id="title">New/Edit Profile</p>
     <input class="editInput" id="name" placeholder="Name"></input>
     <select class="editInput" id="version"></select>
-    <div id="loginButton">
+    <div id="save">
       <div class="button">Save</div>
     </div>
   </div>
@@ -43,7 +43,7 @@
   height: 100%;
   width: 100%;
 }
-#loginButton {
+#save {
   display: table;
   height: 22%;
   width: 100%;
@@ -72,6 +72,7 @@
 <script>
 const fs = require('fs');
 const request = require('request');
+const remote = require('electron').remote;
 
 request('https://launchermeta.mojang.com/mc/game/version_manifest.json', (error, response, body) => {
   let manifest = JSON.parse(body);
@@ -98,6 +99,27 @@ request('https://launchermeta.mojang.com/mc/game/version_manifest.json', (error,
       option.text = 'Custom: ' + dir[i].split('.json').slice(0, dir[i].split('.json').length - 1).join('.json');
       versions.add(option);
     }
+  }
+  let params = new URLSearchParams(document.location.search.substring(1));
+  let id = null;
+  if (params.get('edit') && fs.existsSync('data/profiles.json')) {
+    id = params.get('id');
+    let profiles = JSON.parse(fs.readFileSync('data/profiles.json', 'utf8'));
+    document.getElementById('name').value = profiles[id].name;
+    document.getElementById('version').value = profiles[id].version;
+  }
+  document.getElementById('save').onclick = () => {
+    let profiles = [];
+    if (fs.existsSync('data/profiles.json')) {
+      profiles = JSON.parse(fs.readFileSync('data/profiles.json', 'utf8'));
+    }
+    if (id) {
+      profiles[id] = {name: document.getElementById('name').value, version: document.getElementById('version').value};
+    } else {
+      profiles.push({name: document.getElementById('name').value, version: document.getElementById('version').value});
+    }
+    fs.writeFileSync('data/profiles.json', JSON.stringify(profiles));
+    remote.getCurrentWindow().close();
   }
 });
 </script>

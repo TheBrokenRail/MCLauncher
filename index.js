@@ -14,5 +14,5 @@ function createWindow () {
     slashes: true
   }));
 }
-  
+
 app.on('ready', createWindow);
