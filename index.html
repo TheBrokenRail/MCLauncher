@@ -249,11 +249,11 @@ document.getElementById('play').onclick = () => {
     getAuthData(auth => {
       launcher({
         version: profiles[id].version,
-        username: auth.selectedProfile.name,
-        uuid: auth.selectedProfile.id,
-        authToken: auth.accessToken,
+        username: auth.selectedProfile.hasOwnProperty('name') ? auth.selectedProfile.name : 'Steve',
+        uuid: auth.selectedProfile.hasOwnProperty('id') ? auth.selectedProfile.id : 0,
+        authToken: auth.hasOwnProperty('accessToken') ? auth.accessToken : 0,
         profile: profiles[id].name,
-        demo: false,
+        demo: auth.selectedProfile.hasOwnProperty('id') ? false : true,
         log: data => {
           logWin.webContents.send('log', data);
         },
