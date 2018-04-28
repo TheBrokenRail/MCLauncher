@@ -250,7 +250,7 @@ module.exports = async (options, callback) => {
       fs.mkdirSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2));
     }
     options.log('Downloading Asset ' + x + ': ');
-    if (fs.existsSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash)) {
+    if ((versionJson.assetIndex.id !== 'legacy' && fs.existsSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash)) || (versionJson.assetIndex.id === 'legacy' && fs.existsSync('data/assets/virtual/' + versionJson.assetIndex.id + '/' + x))) {
       options.log('Skipped\n');
     }
     if (versionJson.assetIndex.id !== 'legacy' && !fs.existsSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash)) {
@@ -297,6 +297,7 @@ module.exports = async (options, callback) => {
   args = args.replace(new RegExp(escape('${launcher_name}'), 'g'), launcherName);
   args = args.replace(new RegExp(escape('${launcher_version}'), 'g'), launcherVersion);
   args = args.replace(new RegExp(escape('${classpath}'), 'g'), classpath);
+  args = args.replace(new RegExp(escape('${user_properties}'), 'g'), '{}');
   options.log('ARGS: javaw' + args + '\n');
   let minecraft = exec('javaw' +  args, {stdio: 'pipe'});
   minecraft.stdout.on('data', chunk => options.log(chunk.toString()));
