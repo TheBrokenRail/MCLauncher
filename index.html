@@ -82,15 +82,19 @@ const fs = require('fs');
 const launcher = require('./launcher');
 
 function login() {
-  let win = new remote.BrowserWindow({width: 400, height: 310, parent: remote.getCurrentWindow(), resizable: false});
+  let win = new remote.BrowserWindow({width: 400, height: 310, parent: remote.getCurrentWindow(), resizable: false, show: false});
 
   win.loadURL(url.format({
     pathname: path.join(__dirname, 'login.html'),
     protocol: 'file:',
     slashes: true
   }));
+  win.setMenu(null);
+  win.once('ready-to-show', () => {
+    win.show();
+  });
 }
-function getAuthData() {
+function getAuthData(callback) {
   if (fs.existsSync('data/auth.json')) {
     let auth = JSON.parse(fs.readFileSync('./data/auth.json', 'utf8'));
     request.post('https://authserver.mojang.com/refresh', {
@@ -101,7 +105,7 @@ function getAuthData() {
     }, (error, response, body) => {
       if (response.statusCode === 200) {
         fs.writeFileSync('data/auth.json', JSON.stringify({accessToken: body.accessToken, clientToken: body.clientToken}));
-        return body;
+        callback(body);
       } else {
         login();
       }
@@ -110,9 +114,9 @@ function getAuthData() {
     login();
   }
 }
-getAuthData();
+getAuthData(data => {});
 document.getElementById('newProfile').onclick = () => {
-  let win = new remote.BrowserWindow({width: 400, height: 310, parent: remote.getCurrentWindow(), resizable: false});
+  let win = new remote.BrowserWindow({width: 400, height: 310, parent: remote.getCurrentWindow(), resizable: false, show: false});
 
   win.loadURL(url.format({
     pathname: path.join(__dirname, 'edit.html'),
@@ -120,8 +124,16 @@ document.getElementById('newProfile').onclick = () => {
     slashes: true
   }));
   win.on('close', loadProfiles);
+  win.setMenu(null);
+  win.once('ready-to-show', () => {
+    win.show();
+  });
 };
 function loadProfiles() {
+  let selected = 0;
+  if (document.getElementById('selectedItem')) {
+    selected = Number(document.getElementById('selectedItem').getAttribute('data-id'));
+  }
   let profiles = [];
   if (fs.existsSync('data/profiles.json')) {
     profiles = JSON.parse(fs.readFileSync('data/profiles.json', 'utf8'));
@@ -139,9 +151,48 @@ function loadProfiles() {
       item.id = 'selectedItem';
       document.getElementById('play').classList.remove('disabled-button');
     };
+    if (i === selected) {
+      item.id = 'selectedItem';
+      document.getElementById('play').classList.remove('disabled-button');
+    }
     item.setAttribute('data-id', i);
     profilesElement.appendChild(item);
   }
 }
 loadProfiles();
+document.getElementById('play').onclick = () => {
+  if (!document.getElementById('play').classList.contains('disabled-button')) {
+    let profiles = JSON.parse(fs.readFileSync('data/profiles.json', 'utf8'));
+    let id = Number(document.getElementById('selectedItem').getAttribute('data-id'));
+    let logWin = new remote.BrowserWindow({width: 512, height: 512, parent: remote.getCurrentWindow(), show: false});
+    logWin.loadURL(url.format({
+      pathname: path.join(__dirname, 'log.html'),
+      protocol: 'file:',
+      slashes: true
+    }));
+    logWin.setMenu(null);
+    logWin.once('ready-to-show', () => {
+      logWin.show();
+    });
+    getAuthData(auth => {
+      launcher({
+        version: profiles[id].version,
+        username: auth.selectedProfile.name,
+        uuid: auth.selectedProfile.id,
+        authToken: auth.accessToken,
+        profile: profiles[id].version,
+        demo: false,
+        log: data => {
+          logWin.webContents.send('log', data);
+        }
+      }, minecraft => {
+        minecraft.on('close', () => {
+          document.getElementById('play').classList.remove('disabled-button');
+          logWin.close();
+        });
+      });
+      document.getElementById('play').classList.add('disabled-button');
+    });
+  }
+};
 </script>

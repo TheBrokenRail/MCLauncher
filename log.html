@@ -1,0 +1,9 @@
+<textarea id="log" style="position: absolute; top: 0; left: 0; height: 100%; width: 100%; resize: none;" readonly></textarea>
+<script>
+const ipcRenderer = require('electron').ipcRenderer;
+
+ipcRenderer.on('log', (event, message) => {
+  document.getElementById('log').value = document.getElementById('log').value + message;
+  document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
+});
+</script>
