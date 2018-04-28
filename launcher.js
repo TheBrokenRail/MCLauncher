@@ -260,7 +260,7 @@ module.exports = async (options, callback) => {
   let launcherVersion = '10';
   args = args.replace(new RegExp(escape('${auth_player_name}'), 'g'), username);
   args = args.replace(new RegExp(escape('${version_name}'), 'g'), version);
-  args = args.replace(new RegExp(escape('${game_directory}'), 'g'), gameDir);
+  args = args.replace(new RegExp(escape('${game_directory}'), 'g'), '"' + gameDir + '"');
   args = args.replace(new RegExp(escape('${assets_root}'), 'g'), assets);
   args = args.replace(new RegExp(escape('${game_assets}'), 'g'), virtualAssets);
   args = args.replace(new RegExp(escape('${assets_index_name}'), 'g'), assetsIndex);

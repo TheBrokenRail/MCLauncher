@@ -180,7 +180,7 @@ document.getElementById('play').onclick = () => {
         username: auth.selectedProfile.name,
         uuid: auth.selectedProfile.id,
         authToken: auth.accessToken,
-        profile: profiles[id].version,
+        profile: profiles[id].name,
         demo: false,
         log: data => {
           logWin.webContents.send('log', data);
