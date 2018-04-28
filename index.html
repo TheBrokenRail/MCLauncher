@@ -118,7 +118,7 @@ function getAuthData(callback) {
 }
 getAuthData(data => {});
 document.getElementById('newProfile').onclick = () => {
-  let win = new remote.BrowserWindow({width: 400, height: 310, parent: remote.getCurrentWindow(), resizable: false, show: false});
+  let win = new remote.BrowserWindow({width: 400, height: 350, parent: remote.getCurrentWindow(), resizable: false, show: false});
   win.loadURL(url.format({
     pathname: path.join(__dirname, 'edit.html'),
     protocol: 'file:',
@@ -130,6 +130,19 @@ document.getElementById('newProfile').onclick = () => {
     win.show();
   });
 };
+function formatVersion(version) {
+  if (version === 'latest-release') {
+    return 'Latest Release';
+  }
+  if (version === 'latest-snapshot') {
+    return 'Latest Snapshot';
+  }
+  if (version.startsWith('custom?')) {
+    return 'Custom: ' + version.split('custom?').slice(1).join('custom?');
+  } else {
+    return version;
+  }
+}
 function loadProfiles() {
   let selected = 0;
   if (document.getElementById('selectedItem')) {
@@ -146,6 +159,13 @@ function loadProfiles() {
     let item = document.createElement('P');
     item.classList.add('item');
     item.appendChild(document.createTextNode(profiles[i].name));
+    item.style.userSelect = 'none';
+    let versionText = formatVersion(profiles[i].version);
+    let version = document.createElement('SPAN');
+    version.style.float = 'right';
+    version.style.userSelect = 'none';
+    version.appendChild(document.createTextNode(versionText));
+    item.appendChild(version);
     let menu = new Menu()
     menu.append(new MenuItem({label: 'Edit', click: () => {
       let win = new remote.BrowserWindow({width: 400, height: 310, parent: remote.getCurrentWindow(), resizable: false, show: false});
@@ -223,6 +243,9 @@ document.getElementById('play').onclick = () => {
     logWin.once('ready-to-show', () => {
       logWin.show();
     });
+    logWin.on('close', () => {
+      remote.getCurrentWindow().focus();
+    });
     getAuthData(auth => {
       launcher({
         version: profiles[id].version,
@@ -234,12 +257,10 @@ document.getElementById('play').onclick = () => {
         log: data => {
           logWin.webContents.send('log', data);
         },
-        ram: 2
+        ram: profiles[id].ram
       }, minecraft => {
         minecraft.on('close', () => {
           document.getElementById('play').classList.remove('disabled-button');
-          logWin.close();
-          remote.getCurrentWindow().focus();
         });
       });
       document.getElementById('play').classList.add('disabled-button');

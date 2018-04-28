@@ -3,6 +3,7 @@
   <div id="innerContainer">
     <p id="title">New/Edit Profile</p>
     <input class="editInput" id="name" placeholder="Name"></input>
+    <input class="editInput" id="ram" placeholder="RAM (in GB)"></input>
     <select class="editInput" id="version"></select>
     <div id="save">
       <div class="button">Save</div>
@@ -22,7 +23,7 @@
   display: block;
   width: 100%;
   margin: 2%;
-  height: 22%;
+  height: 16%;
   margin-left: 0;
   margin-right: 0;
   font-family: sans-serif;
@@ -31,7 +32,7 @@
 #title {
   width: 100%;
   margin: 2%;
-  height: 22%;
+  height: 16%;
   margin-left: 0;
   margin-right: 0;
   font-family: sans-serif;
@@ -46,7 +47,7 @@
 }
 #save {
   display: table;
-  height: 22%;
+  height: 16%;
   width: 100%;
   margin: 2%;
   margin-left: 0;
@@ -108,16 +109,25 @@ request('https://launchermeta.mojang.com/mc/game/version_manifest.json', (error,
     let profiles = JSON.parse(fs.readFileSync('data/profiles.json', 'utf8'));
     document.getElementById('name').value = profiles[id].name;
     document.getElementById('version').value = profiles[id].version;
+    document.getElementById('ram').value = profiles[id].ram;
   }
   document.getElementById('save').onclick = () => {
     let profiles = [];
     if (fs.existsSync('data/profiles.json')) {
       profiles = JSON.parse(fs.readFileSync('data/profiles.json', 'utf8'));
     }
+    let name = document.getElementById('name').value;
+    if (name.length < 1) {
+      name = 'Untitled Profile';
+    }
+    let ram = document.getElementById('ram').value;
+    if (ram.length < 1 || isNaN(Number(ram))) {
+      ram = '2';
+    }
     if (id) {
-      profiles[id] = {name: document.getElementById('name').value, version: document.getElementById('version').value};
+      profiles[id] = {name: name, version: document.getElementById('version').value, ram: Number(ram)};
     } else {
-      profiles.push({name: document.getElementById('name').value, version: document.getElementById('version').value});
+      profiles.push({name: name, version: document.getElementById('version').value, ram: Number(ram)});
     }
     fs.writeFileSync('data/profiles.json', JSON.stringify(profiles));
     remote.getCurrentWindow().close();

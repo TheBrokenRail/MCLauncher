@@ -16,9 +16,12 @@ module.exports = async (options, callback) => {
   let versionsJson = JSON.parse(await request('https://launchermeta.mojang.com/mc/game/version_manifest.json'));
   let version = options.version;
   let versionJson = null;
+  let classpath = '';
+  let custom = false;
   if (version.startsWith('custom?')) {
     if (fs.existsSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '.json')) {
       versionJson = JSON.parse(fs.readFileSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '.json', 'utf8'));
+      custom = true;
     } else {
       version = 'latest-release';
     }
@@ -39,7 +42,6 @@ module.exports = async (options, callback) => {
     versionJson = JSON.parse(await request(url));
   }
   fs.writeFileSync('data/' + instanceId + '.jar', await request(versionJson.downloads.client.url, {encoding: null}));
-  let classpath = '';
   if (!fs.existsSync('data/natives')) {
     fs.mkdirSync('data/natives');
   }
@@ -160,6 +162,13 @@ module.exports = async (options, callback) => {
     rimraf.sync('minecraft/natives/META-INF');
   }
   classpath = classpath + path.resolve(__dirname, 'data/' + instanceId + '.jar') + ';';
+  if (custom && fs.existsSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '-classpath') && fs.readdirSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '-classpath').length > 0) {
+    let primitive = '';
+    let files = fs.readdirSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '-classpath');
+    for (let i = 0; i < files.length; i++) {
+      classpath = classpath + path.resolve(__dirname, 'data/custom/' + version.split('custom?').slice(1).join('custom?') + '-classpath/' + files[i]) + ';';
+    }
+  }
   let args = '';
   let jvmArgs = [];
   if (versionJson.arguments && versionJson.arguments.jvm) {
@@ -288,7 +297,7 @@ module.exports = async (options, callback) => {
   args = args.replace(new RegExp(escape('${launcher_name}'), 'g'), launcherName);
   args = args.replace(new RegExp(escape('${launcher_version}'), 'g'), launcherVersion);
   args = args.replace(new RegExp(escape('${classpath}'), 'g'), classpath);
-  options.log('ARGS: javaw' + args);
+  options.log('ARGS: javaw' + args + '\n');
   let minecraft = exec('javaw' +  args, {stdio: 'pipe'});
   minecraft.stdout.on('data', chunk => options.log(chunk.toString()));
   minecraft.stderr.on('data', chunk => options.log(chunk.toString()));
