@@ -1,11 +1,12 @@
-﻿<div id="toolbar">
+﻿<title>MCLauncher</title>
+<div id="toolbar">
   <div class="button" id="newProfile">
     <span class="buttonText">New Profile</span>
   </div>
 </div>
 <div id="profiles"></div>
 <div id="action">
-  <div class="button disabled-button" id="play">
+  <div class="button" id="play">
     <span class="buttonText">Play</span>
   </div>
 </div>
@@ -75,15 +76,16 @@
 </style>
 <script>
 const remote = require('electron').remote;
+const { Menu, MenuItem, dialog } = remote;
 const path = require('path');
 const url = require('url');
 const request = require('request');
 const fs = require('fs');
 const launcher = require('./launcher');
+const rimraf = require('rimraf');
 
 function login() {
   let win = new remote.BrowserWindow({width: 400, height: 310, parent: remote.getCurrentWindow(), resizable: false, show: false});
-
   win.loadURL(url.format({
     pathname: path.join(__dirname, 'login.html'),
     protocol: 'file:',
@@ -117,7 +119,6 @@ function getAuthData(callback) {
 getAuthData(data => {});
 document.getElementById('newProfile').onclick = () => {
   let win = new remote.BrowserWindow({width: 400, height: 310, parent: remote.getCurrentWindow(), resizable: false, show: false});
-
   win.loadURL(url.format({
     pathname: path.join(__dirname, 'edit.html'),
     protocol: 'file:',
@@ -140,10 +141,50 @@ function loadProfiles() {
   }
   let profilesElement = document.getElementById('profiles');
   profilesElement.innerHTML = '';
+  let anySelected = false;
   for (let i = 0; i < profiles.length; i++) {
     let item = document.createElement('P');
     item.classList.add('item');
     item.appendChild(document.createTextNode(profiles[i].name));
+    let menu = new Menu()
+    menu.append(new MenuItem({label: 'Edit', click: () => {
+      let win = new remote.BrowserWindow({width: 400, height: 310, parent: remote.getCurrentWindow(), resizable: false, show: false});
+      win.loadURL(url.format({
+        pathname: path.join(__dirname, 'edit.html'),
+        protocol: 'file:',
+        slashes: true,
+        query: {
+          edit: i
+        }
+      }));
+      win.on('close', loadProfiles);
+      win.setMenu(null);
+      win.once('ready-to-show', () => {
+        win.show();
+      });
+    }}));
+    menu.append(new MenuItem({label: 'Delete', click: () => {
+      dialog.showMessageBox(remote.getCurrentWindow(), {
+        type: 'question',
+        buttons: [
+          'No',
+          'Yes'
+        ],
+        deafultId: 0,
+        title: 'Delete Profile',
+        message: 'Are you sure you want to delete this profile?'
+      }, response => {
+        if (response === 1) {
+          let newProfiles = JSON.parse(fs.readFileSync('data/profiles.json', 'utf8'));
+          let name = newProfiles[i].name;
+          newProfiles.splice(i, 1);
+          fs.writeFileSync('data/profiles.json', JSON.stringify(newProfiles));
+          rimraf('data/profiles/' + name, {}, error => {
+            loadProfiles();
+          });
+        }
+      });
+    }}));
     item.onclick = () => {
       if (document.getElementById('selectedItem')) {
         document.getElementById('selectedItem').id = '';
@@ -151,12 +192,20 @@ function loadProfiles() {
       item.id = 'selectedItem';
       document.getElementById('play').classList.remove('disabled-button');
     };
+    item.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      menu.popup(remote.getCurrentWindow());
+    }, false);
     if (i === selected) {
+      anySelected = true;
       item.id = 'selectedItem';
       document.getElementById('play').classList.remove('disabled-button');
     }
-    item.setAttribute('data-id', i);
+    item.setAttribute('data-id', i);                                                                                                                                                                                
     profilesElement.appendChild(item);
+  }
+  if (!anySelected) {
+    document.getElementById('play').classList.add('disabled-button');
   }
 }
 loadProfiles();
@@ -164,7 +213,7 @@ document.getElementById('play').onclick = () => {
   if (!document.getElementById('play').classList.contains('disabled-button')) {
     let profiles = JSON.parse(fs.readFileSync('data/profiles.json', 'utf8'));
     let id = Number(document.getElementById('selectedItem').getAttribute('data-id'));
-    let logWin = new remote.BrowserWindow({width: 512, height: 512, parent: remote.getCurrentWindow(), show: false});
+    let logWin = new remote.BrowserWindow({width: 640, height: 640, parent: remote.getCurrentWindow(), show: false});
     logWin.loadURL(url.format({
       pathname: path.join(__dirname, 'log.html'),
       protocol: 'file:',
@@ -184,11 +233,13 @@ document.getElementById('play').onclick = () => {
         demo: false,
         log: data => {
           logWin.webContents.send('log', data);
-        }
+        },
+        ram: 2
       }, minecraft => {
         minecraft.on('close', () => {
           document.getElementById('play').classList.remove('disabled-button');
           logWin.close();
+          remote.getCurrentWindow().focus();
         });
       });
       document.getElementById('play').classList.add('disabled-button');

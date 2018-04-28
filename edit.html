@@ -1,3 +1,4 @@
+<title>New/Edit Profile</title>
 <div id="container">
   <div id="innerContainer">
     <p id="title">New/Edit Profile</p>
@@ -103,7 +104,7 @@ request('https://launchermeta.mojang.com/mc/game/version_manifest.json', (error,
   let params = new URLSearchParams(document.location.search.substring(1));
   let id = null;
   if (params.get('edit') && fs.existsSync('data/profiles.json')) {
-    id = params.get('id');
+    id = params.get('edit');
     let profiles = JSON.parse(fs.readFileSync('data/profiles.json', 'utf8'));
     document.getElementById('name').value = profiles[id].name;
     document.getElementById('version').value = profiles[id].version;
