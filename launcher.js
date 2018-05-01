@@ -14,33 +14,40 @@ const {
 module.exports = async (options, callback) => {
   let instanceId = uid();
   let versionsJson = JSON.parse(await request('https://launchermeta.mojang.com/mc/game/version_manifest.json'));
-  let version = options.version;
-  let versionJson = null;
-  let classpath = '';
-  let custom = false;
-  if (version.startsWith('custom?')) {
-    if (fs.existsSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '.json')) {
-      versionJson = JSON.parse(fs.readFileSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '.json', 'utf8'));
-      custom = true;
-    } else {
-      version = 'latest-release';
+  let versionRaw = options.version;
+  const getVersionJson = async version => {
+    let versionJson = null;
+    let classpath = '';
+    let custom = false;
+    if (version.startsWith('custom?')) {
+      if (fs.existsSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '.json')) {
+        versionJson = JSON.parse(fs.readFileSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '.json', 'utf8'));
+        custom = true;
+      } else {
+        version = 'latest-release';
+      }
     }
-  }
-  if (version === 'latest-release') {
-    version = versionsJson.latest.release;
-  }
-  if (version === 'latest-snapshot') {
-    version = versionsJson.latest.snapshot;
-  }
-  let url = '';
-  for (i = 0; i < versionsJson.versions.length; i++) {
-    if (version === versionsJson.versions[i].id) {
-      url = versionsJson.versions[i].url;
+    if (version === 'latest-release') {
+      version = versionsJson.latest.release;
     }
-  }
-  if (!versionJson) {
-    versionJson = JSON.parse(await request(url));
-  }
+    if (version === 'latest-snapshot') {
+      version = versionsJson.latest.snapshot;
+    }
+    let url = '';
+    for (i = 0; i < versionsJson.versions.length; i++) {
+      if (version === versionsJson.versions[i].id) {
+        url = versionsJson.versions[i].url;
+      }
+    }
+    if (!versionJson) {
+      versionJson = JSON.parse(await request(url));
+    }
+    if (versionJson.hasOwnProperty('inheritsFrom')) {
+      versionJson.libraries = versionJson.libraries.concat(await getVersionJson(versionJson.inheritsFrom));
+    }
+    return versionJson;
+  };
+  let versionJson = await getVersionJson(versionRaw);
   fs.writeFileSync('data/' + instanceId + '.jar', await request(versionJson.downloads.client.url, {encoding: null}));
   if (!fs.existsSync('data/natives')) {
     fs.mkdirSync('data/natives');
@@ -110,7 +117,7 @@ module.exports = async (options, callback) => {
     }
     if (allow) {
       options.log('Downloading Library ' + versionJson.libraries[i].name + ': ');
-      if (versionJson.libraries[i].downloads.artifact) {
+      if (versionJson.libraries[i].downloads && versionJson.libraries[i].downloads.artifact) {
         if (!fs.existsSync('data/lib/' + versionJson.libraries[i].downloads.artifact.path)) {
           mkdirp.sync('data/lib/' + versionJson.libraries[i].downloads.artifact.path.split('/').splice(0, versionJson.libraries[i].downloads.artifact.path.split('/').length - 1).join('/'));
           fs.writeFileSync('data/lib/' + versionJson.libraries[i].downloads.artifact.path, await request(versionJson.libraries[i].downloads.artifact.url, {encoding: null}));
