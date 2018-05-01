@@ -126,6 +126,17 @@ module.exports = async (options, callback) => {
           options.log('Skipped\n');
         }
         classpath = classpath + path.resolve(__dirname, 'data/lib/' + versionJson.libraries[i].downloads.artifact.path) + ';';
+      } else {
+        let pathRaw = versionJson.libraries[i].name.split(':');
+        let path = pathRaw[0] + '/' + pathRaw[1] + '/' + pathRaw[2] + '/' + pathRaw[1] + '-' + pathRaw[2] + '.jar';
+        if (!fs.existsSync('data/lib/' + path)) {
+          mkdirp.sync('data/lib/' + path.split('/').splice(0, path.split('/').length - 1).join('/'));
+          fs.writeFileSync('data/lib/' + path, await request('https://libraries.minecraft.net/' + path, {encoding: null}));
+          options.log('Done\n');
+        } else {
+          options.log('Skipped\n');
+        }
+        classpath = classpath + path.resolve(__dirname, 'data/lib/' + path) + ';';
       }
       if (versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-windows']) {
         options.log('Downloading Library ' + versionJson.libraries[i].name + ' Natives For Windows: ');
@@ -257,14 +268,14 @@ module.exports = async (options, callback) => {
       fs.mkdirSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2));
     }
     options.log('Downloading Asset ' + x + ': ');
-    if ((versionJson.assetIndex.id !== 'legacy' && fs.existsSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash)) || (versionJson.assetIndex.id === 'legacy' && fs.existsSync('data/assets/virtual/' + versionJson.assetIndex.id + '/' + x))) {
+    if ((versionJson.assetIndex.id !== 'legacy' && fs.existsSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash)) || (versionJson.assetIndex.id === 'legacy' && fs.existsSync('data/assets/virtual/' + x))) {
       options.log('Skipped\n');
     }
     if (versionJson.assetIndex.id !== 'legacy' && !fs.existsSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash)) {
       let asset = await request('http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash, {encoding: null});
       fs.writeFileSync('data/assets/objects/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash, asset);
       options.log('Done\n');
-    } else if (versionJson.assetIndex.id === 'legacy' && !fs.existsSync('data/assets/virtual/' + versionJson.assetIndex.id + '/' + x)) {
+    } else if (versionJson.assetIndex.id === 'legacy' && !fs.existsSync('data/assets/virtual/' + x)) {
       let asset = await request('http://resources.download.minecraft.net/' + index.objects[x].hash.slice(0, 2) + '/' + index.objects[x].hash, {encoding: null});
       mkdirp.sync('data/assets/virtual/' + x.split('/').splice(0, x.split('/').length - 1).join('/'));
       fs.writeFileSync('data/assets/virtual/' + x, asset);
