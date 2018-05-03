@@ -20,8 +20,8 @@ module.exports = async (options, callback) => {
     let classpath = '';
     let custom = false;
     if (version.startsWith('custom?')) {
-      if (fs.existsSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '.json')) {
-        versionJson = JSON.parse(fs.readFileSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '.json', 'utf8'));
+      if (fs.existsSync('data/versions/' + version.split('custom?').slice(1).join('custom?') + '.json')) {
+        versionJson = JSON.parse(fs.readFileSync('data/versions/' + version.split('custom?').slice(1).join('custom?') + '.json', 'utf8'));
         custom = true;
       } else {
         version = 'latest-release';
@@ -128,17 +128,21 @@ module.exports = async (options, callback) => {
         classpath = classpath + path.resolve(__dirname, 'data/lib/' + versionJson.libraries[i].downloads.artifact.path) + ';';
       } else {
         let pathRaw = versionJson.libraries[i].name.split(':');
-        let path = pathRaw[0] + '/' + pathRaw[1] + '/' + pathRaw[2] + '/' + pathRaw[1] + '-' + pathRaw[2] + '.jar';
+        let url = 'https://libraries.minecraft.net/';
+        if (versionJson.libraries[i].url) {
+          url = versionJson.libraries[i].url;
+        }
+        let path = pathRaw[0].replace(new RegExp('.', 'g'), '/') + '/' + pathRaw[1] + '/' + pathRaw[2] + '/' + pathRaw[1] + '-' + pathRaw[2] + '.jar';
         if (!fs.existsSync('data/lib/' + path)) {
           mkdirp.sync('data/lib/' + path.split('/').splice(0, path.split('/').length - 1).join('/'));
-          fs.writeFileSync('data/lib/' + path, await request('https://libraries.minecraft.net/' + path, {encoding: null}));
+          fs.writeFileSync('data/lib/' + path, await request(url + path, {encoding: null}));
           options.log('Done\n');
         } else {
           options.log('Skipped\n');
         }
         classpath = classpath + path.resolve(__dirname, 'data/lib/' + path) + ';';
       }
-      if (versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-windows']) {
+      if (versionJson.libraries[i].downloads && versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-windows']) {
         options.log('Downloading Library ' + versionJson.libraries[i].name + ' Natives For Windows: ');
         let asset = await request(versionJson.libraries[i].downloads.classifiers['natives-windows'].url, {encoding: null});
         fs.writeFileSync('temp.jar', asset);
@@ -147,7 +151,7 @@ module.exports = async (options, callback) => {
         fs.unlinkSync('temp.jar');
         options.log('Done\n');
       }
-      if (versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-linux']) {
+      if (versionJson.libraries[i].downloads && versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-linux']) {
         options.log('Downloading Library ' + versionJson.libraries[i].name + ' Natives For Linux: ');
         let asset = await request(versionJson.libraries[i].downloads.classifiers['natives-linux'].url, {encoding: null});
         fs.writeFileSync('temp.jar', asset);
@@ -156,7 +160,7 @@ module.exports = async (options, callback) => {
         fs.unlinkSync('temp.jar');
         options.log('Done\n');
       }
-      if (versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-osx']) {
+      if (versionJson.libraries[i].downloads && versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-osx']) {
         options.log('Downloading Library ' + versionJson.libraries[i].name + ' Natives For Mac: ');
         let asset = await request(versionJson.libraries[i].downloads.classifiers['natives-osx'].url, {encoding: null});
         fs.writeFileSync('temp.jar', asset);
@@ -165,7 +169,7 @@ module.exports = async (options, callback) => {
         fs.unlinkSync('temp.jar');
         options.log('Done\n');
       }
-      if (versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-macos']) {
+      if (versionJson.libraries[i].downloads && versionJson.libraries[i].downloads.classifiers && versionJson.libraries[i].downloads.classifiers['natives-macos']) {
         options.log('Downloading Library ' + versionJson.libraries[i].name + ' Natives For Mac: ');
         let asset = await request(versionJson.libraries[i].downloads.classifiers['natives-macos'].url, {encoding: null});
         fs.writeFileSync('temp.jar', asset);
@@ -180,11 +184,11 @@ module.exports = async (options, callback) => {
     rimraf.sync('minecraft/natives/META-INF');
   }
   classpath = classpath + path.resolve(__dirname, 'data/' + instanceId + '.jar') + ';';
-  if (custom && fs.existsSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '-classpath') && fs.readdirSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '-classpath').length > 0) {
+  if (custom && fs.existsSync('data/versions/' + version.split('custom?').slice(1).join('custom?') + '-classpath') && fs.readdirSync('data/versions/' + version.split('custom?').slice(1).join('custom?') + '-classpath').length > 0) {
     let primitive = '';
-    let files = fs.readdirSync('data/custom/' + version.split('custom?').slice(1).join('custom?') + '-classpath');
+    let files = fs.readdirSync('data/versions/' + version.split('custom?').slice(1).join('custom?') + '-classpath');
     for (let i = 0; i < files.length; i++) {
-      classpath = classpath + path.resolve(__dirname, 'data/custom/' + version.split('custom?').slice(1).join('custom?') + '-classpath/' + files[i]) + ';';
+      classpath = classpath + path.resolve(__dirname, 'data/versions/' + version.split('custom?').slice(1).join('custom?') + '-classpath/' + files[i]) + ';';
     }
   }
   let args = '';

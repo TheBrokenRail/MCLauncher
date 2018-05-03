@@ -93,8 +93,8 @@ request('https://launchermeta.mojang.com/mc/game/version_manifest.json', (error,
     option.text = manifest.versions[i].id;
     versions.add(option);
   }
-  if (fs.existsSync('data/custom')) {
-    let dir = fs.readdirSync('data/custom');
+  if (fs.existsSync('data/versions')) {
+    let dir = fs.readdirSync('data/versions');
     for (let i = 0; i < dir.length; i++) {
       let option = document.createElement('OPTION');
       option.value = 'custom?' + dir[i].split('.json').slice(0, dir[i].split('.json').length - 1).join('.json');
