@@ -3,3 +3,5 @@ node_js:
   - "node"
 script:
   - npm run lint
+  - node build.js
+  - dir dist
