@@ -15,10 +15,10 @@ module.exports = async (options, callback) => {
   let instanceId = uid();
   let versionsJson = JSON.parse(await request('https://launchermeta.mojang.com/mc/game/version_manifest.json'));
   let versionRaw = options.version;
+  let classpath = '';
+  let custom = false;
   const getVersionJson = async version => {
     let versionJson = null;
-    let classpath = '';
-    let custom = false;
     if (version.startsWith('custom?')) {
       if (fs.existsSync('data/versions/' + version.split('custom?').slice(1).join('custom?') + '.json')) {
         versionJson = JSON.parse(fs.readFileSync('data/versions/' + version.split('custom?').slice(1).join('custom?') + '.json', 'utf8'));
@@ -70,12 +70,12 @@ module.exports = async (options, callback) => {
       let valid = true;
       if (rules[x].os) {
         let osStr = '';
-        if (os.type() == 'Windows_NT') {
+        if (os.type() === 'Windows_NT') {
           osStr = 'windows';
-        } else if (os.type() == 'Linux') {
+        } else if (os.type() === 'Linux') {
           osStr = 'linux';
         }
-        if (os.type() == 'Darwin') {
+        if (os.type() === 'Darwin') {
           osStr = 'osx';
         }
         if (osStr === rules[x].os.name) {
@@ -185,7 +185,6 @@ module.exports = async (options, callback) => {
   }
   classpath = classpath + path.resolve(__dirname, 'data/' + instanceId + '.jar') + ';';
   if (custom && fs.existsSync('data/versions/' + version.split('custom?').slice(1).join('custom?') + '-classpath') && fs.readdirSync('data/versions/' + version.split('custom?').slice(1).join('custom?') + '-classpath').length > 0) {
-    let primitive = '';
     let files = fs.readdirSync('data/versions/' + version.split('custom?').slice(1).join('custom?') + '-classpath');
     for (let i = 0; i < files.length; i++) {
       classpath = classpath + path.resolve(__dirname, 'data/versions/' + version.split('custom?').slice(1).join('custom?') + '-classpath/' + files[i]) + ';';

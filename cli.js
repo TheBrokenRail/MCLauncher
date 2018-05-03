@@ -19,7 +19,7 @@ let res = request('POST', 'https://authserver.mojang.com/authenticate', {
   }
 });
 let data = JSON.parse(res.getBody('utf8'));
-let minecraft = mclauncher({
+mclauncher({
   version: flags['version'],
   username: data.selectedProfile.name,
   uuid: data.selectedProfile.id,

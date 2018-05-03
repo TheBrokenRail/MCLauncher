@@ -1,0 +1,45 @@
+﻿{
+  "parserOptions": {
+    "ecmaVersion": 2017
+  },
+  "env": {
+    "node": true,
+    "browser": true
+  },
+  "extends": "eslint:recommended",
+  "rules": {
+    "indent": [
+      "error",
+      2,
+      {
+        "SwitchCase": 1
+      }
+    ],
+    "linebreak-style": [
+      "error",
+      "unix"
+    ],
+    "quotes": [
+      "error",
+      "single"
+    ],
+    "semi": [
+      "error",
+      "always"
+    ],
+    "no-undef": "off",
+    "no-console": "off",
+    "eqeqeq": [
+      "error",
+      "always"
+    ],
+    "curly": "error",
+    "camelcase": "error",
+    "no-new-wrappers": "error",
+    "eol-last": [
+      "error",
+      "always"
+    ],
+    "no-control-regex": "off"
+  }
+}
