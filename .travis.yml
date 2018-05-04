@@ -2,7 +2,7 @@
 addons:
   apt:
     sources:
-     - sourceline: 'https://dl.winehq.org/wine-builds/ubuntu/'
+     - sourceline: 'deb https://dl.winehq.org/wine-builds/ubuntu/ trusty main'
        key_url: 'https://dl.winehq.org/wine-builds/Release.key'
     packages:
      - wine
