@@ -1,6 +1,8 @@
 const builder = require('electron-builder');
 
 builder.build({
+  win: [],
+  linux: [],
   config: {
     appId: 'org.thebrokenrail.mclauncher',
     productName: 'MCLauncher',
