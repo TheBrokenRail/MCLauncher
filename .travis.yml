@@ -2,7 +2,8 @@
 addons:
   apt:
     sources:
-     - sourceline: 'ppa:ubuntu-wine/ppa'
+     - sourceline: 'https://dl.winehq.org/wine-builds/ubuntu/'
+       key_url: 'https://dl.winehq.org/wine-builds/Release.key'
     packages:
      - wine
 node_js:
