@@ -5,7 +5,7 @@ addons:
      - sourceline: 'deb https://dl.winehq.org/wine-builds/ubuntu/ trusty main'
        key_url: 'https://dl.winehq.org/wine-builds/Release.key'
     packages:
-     - wine
+     - winehq-stable
 node_js:
   - "node"
 script:
