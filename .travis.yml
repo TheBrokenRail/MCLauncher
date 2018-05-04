@@ -1,4 +1,10 @@
 ﻿language: node_js
+addons:
+  apt:
+    sources:
+     - sourceline: 'ppa:ubuntu-wine/ppa'
+    packages:
+     - wine
 node_js:
   - "node"
 script:
