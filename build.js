@@ -49,7 +49,8 @@ builder.build({
             'arm64'
           ]
         }
-      ]
+      ],
+      maintainer: 'TheBrokenRail'
     }
   }
 });
